@@ -18,20 +18,29 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
 
       - uses: android-actions/setup-android@v3
 
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
       - name: Configure local.properties
         run: |
-          echo "sdk.dir=${ANDROID_SDK_ROOT}" > local.properties
+          SDK_DIR="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "sdk.dir=${SDK_DIR}" > local.properties
 
       - name: Build Debug APK
         run: |
+          sed -i 's/\r$//' ./gradlew
           chmod +x ./gradlew
-          ./gradlew :app:assembleDebug --no-daemon
+          bash ./gradlew :app:assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
